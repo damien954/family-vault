@@ -42,7 +42,7 @@ async function seed() {
     }
 
     // Categories
-    const categories = ['Handgun', 'Rifle', 'Shotgun', 'Accessories', 'Ammunition', 'Optics'];
+    const categories = ['Handgun', 'Rifle', 'Shotgun'];
     const categoryIds = {};
     for (const cat of categories) {
       const r = await client.query(
@@ -135,21 +135,21 @@ async function seed() {
         tags: ['Home Defense', 'Hunting']
       },
       {
-        name: 'Vortex Viper PST Gen II',
-        serial_number: 'VPR789',
-        make: 'Vortex',
-        model: 'Viper PST Gen II 5-25x50',
-        caliber: null,
-        purchase_date: '2022-09-10',
-        purchase_amount: 1199,
-        current_value: 1050,
-        purchased_from: 'Vortex Optics',
+        name: 'Ruger 10/22 Carbine',
+        serial_number: 'RUG10225',
+        make: 'Ruger',
+        model: '10/22 Carbine',
+        caliber: '.22 LR',
+        purchase_date: '2023-06-01',
+        purchase_amount: 329,
+        current_value: 310,
+        purchased_from: 'Local Gun Store',
         location: 'Gun Safe',
         status: 'Active',
-        category: 'Optics',
-        owner_id: adminId,
+        category: 'Rifle',
+        owner_id: userId,
         is_private: false,
-        tags: ['Competition', 'Collector']
+        tags: ['Hunting']
       }
     ];
 
