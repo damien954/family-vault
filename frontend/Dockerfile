@@ -2,14 +2,8 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Add .npmrc for reliable installs
-COPY .npmrc* ./
 COPY package*.json ./
-
-# Install with flags to avoid hanging on optional/peer deps
-RUN npm install --legacy-peer-deps --no-optional --prefer-offline=false \
-    --fetch-timeout=60000 \
-    --loglevel=warn
+RUN npm install
 
 COPY . .
 RUN npm run build

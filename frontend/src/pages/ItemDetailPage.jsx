@@ -7,7 +7,7 @@ import Btn from '../components/common/Btn';
 import ItemFormModal from '../components/inventory/ItemFormModal';
 import { ArrowLeft, Image, Trash2, Upload } from 'lucide-react';
 
-const API_BASE = (process.env.REACT_APP_API_URL || '/api').replace('/api', '');
+const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace('/api', '');
 
 function fmt(n) {
   return n != null

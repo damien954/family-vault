@@ -37,19 +37,13 @@ export default function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
-              <Route
-                path="/"
-                element={<PrivateRoute><Layout /></PrivateRoute>}
-              >
+              <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
                 <Route index element={<DashboardPage />} />
                 <Route path="inventory" element={<InventoryPage />} />
                 <Route path="inventory/:id" element={<ItemDetailPage />} />
                 <Route path="locations" element={<LocationsPage />} />
                 <Route path="categories" element={<CategoriesPage />} />
-                <Route
-                  path="users"
-                  element={<PrivateRoute adminOnly><UsersPage /></PrivateRoute>}
-                />
+                <Route path="users" element={<PrivateRoute adminOnly><UsersPage /></PrivateRoute>} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
