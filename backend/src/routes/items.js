@@ -59,7 +59,7 @@ function itemQuery(extraWhere = '') {
 
 // GET /api/items
 router.get('/', async (req, res) => {
-  const { search, status, category_id, tag, location_id, sort_by, sort_dir, private: isPrivate } = req.query;
+  const { search, status, category_id, tag, location_id, owner_id, sort_by, sort_dir, private: isPrivate } = req.query;
   const conditions = [];
   const values = [];
   let i = 1;
@@ -75,6 +75,7 @@ router.get('/', async (req, res) => {
   if (status) { conditions.push(`i.status = $${i++}`); values.push(status); }
   if (category_id) { conditions.push(`i.category_id = $${i++}`); values.push(category_id); }
   if (location_id) { conditions.push(`i.storage_location_id = $${i++}`); values.push(location_id); }
+  if (owner_id) { conditions.push(`i.owner_id = $${i++}`); values.push(owner_id); }
   if (isPrivate === 'true') { conditions.push(`i.is_private = true AND i.owner_id = $${i++}`); values.push(req.user.id); }
 
   const where = `WHERE ${conditions.join(' AND ')}`;

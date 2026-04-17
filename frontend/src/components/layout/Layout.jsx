@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../store/auth';
+import { useAuth } from '../../store/auth.jsx';
 import {
   LayoutDashboard, Package, MapPin, Tag, Users, LogOut, Shield,
 } from 'lucide-react';

@@ -6,11 +6,8 @@ import Btn from '../common/Btn';
 import { X } from 'lucide-react';
 
 const STATUS_OPTIONS = ['Active', 'Sold', 'Transferred', 'Lost', 'Stolen'];
-
-// Firearm categories only
 const FIREARM_CATEGORIES = ['Handgun', 'Rifle', 'Shotgun'];
 
-// Known firearm brands
 const MAKE_OPTIONS = [
   'Barrett', 'Benelli', 'Beretta', 'Browning', 'CZ', 'Daniel Defense',
   'FN', 'Glock', 'H&K', 'Kimber', 'Kel-Tec', 'Mossberg', 'Palmetto State Armory',
@@ -18,43 +15,33 @@ const MAKE_OPTIONS = [
   'Springfield Armory', 'Stoeger', 'Taurus', 'Tikka', 'Walther', 'Winchester', 'Other',
 ];
 
-// Calibers grouped by firearm type - renders as <optgroup> in the dropdown
-const CALIBER_GROUPS = [
-  {
-    label: 'Handgun',
-    calibers: [
-      '9mm', '.380 ACP', '.40 S&W', '.45 ACP', '.45 Colt',
-      '.357 Magnum', '.357 SIG', '.38 Special', '.38 Super',
-      '10mm', '.44 Magnum', '.44 Special', '.50 AE',
-      '.22 LR', '.22 WMR', '.17 HMR',
-    ],
-  },
-  {
-    label: 'Rifle',
-    calibers: [
-      '5.56 NATO / .223 Rem', '.308 Win / 7.62 NATO', '6.5 Creedmoor',
-      '.300 Blackout', '7.62x39mm', '.30-06 Springfield',
-      '.243 Win', '.270 Win', '.338 Lapua', '.300 Win Mag',
-      '6.8 SPC', '.224 Valkyrie', '6mm ARC', '.350 Legend',
-      '.450 Bushmaster', '.458 SOCOM',
-    ],
-  },
-  {
-    label: 'Shotgun',
-    calibers: [
-      '12 Gauge', '20 Gauge', '.410 Bore', '28 Gauge', '10 Gauge', '16 Gauge',
-    ],
-  },
-];
+// Calibers keyed by category label — selecting type filters this list
+const CALIBER_GROUPS = {
+  Handgun: [
+    '9mm', '.380 ACP', '.40 S&W', '.45 ACP', '.45 Colt',
+    '.357 Magnum', '.357 SIG', '.38 Special', '.38 Super',
+    '10mm', '.44 Magnum', '.44 Special', '.50 AE',
+    '.22 LR', '.22 WMR', '.17 HMR',
+  ],
+  Rifle: [
+    '5.56 NATO / .223 Rem', '.308 Win / 7.62 NATO', '6.5 Creedmoor',
+    '.300 Blackout', '7.62x39mm', '.30-06 Springfield',
+    '.243 Win', '.270 Win', '.338 Lapua', '.300 Win Mag',
+    '6.8 SPC', '.224 Valkyrie', '6mm ARC', '.350 Legend',
+    '.450 Bushmaster', '.458 SOCOM', '.22 LR', '.17 HMR',
+  ],
+  Shotgun: [
+    '12 Gauge', '20 Gauge', '.410 Bore', '28 Gauge', '10 Gauge', '16 Gauge',
+  ],
+};
 
-// Flat list for "known caliber" detection on edit
-const ALL_KNOWN_CALIBERS = CALIBER_GROUPS.flatMap(g => g.calibers);
+const ALL_KNOWN_CALIBERS = [...new Set(Object.values(CALIBER_GROUPS).flat())];
 
 const EMPTY_FORM = {
-  name: '', serial_number: '', make: '', make_custom: '', model: '', caliber: '', caliber_custom: '',
+  serial_number: '', make: '', make_custom: '', model: '', caliber: '', caliber_custom: '',
   purchase_date: '', purchase_amount: '', current_value: '', acquired_from: '',
-  storage_location_id: '', status: 'Active', category_id: '', notes: '',
-  owner_id: '', is_private: false, tags: '',
+  storage_location_id: '', status: 'Active', category_id: '', category_name: '',
+  notes: '', owner_id: '', is_private: false, tags: '',
 };
 
 export default function ItemFormModal({ item, onClose }) {
@@ -68,15 +55,18 @@ export default function ItemFormModal({ item, onClose }) {
   const { data: categories = [] } = useQuery({ queryKey: ['categories'], queryFn: () => categoriesApi.list().then(r => r.data) });
   const { data: users = [] } = useQuery({ queryKey: ['users'], queryFn: () => usersApi.list().then(r => r.data) });
 
-  // Filter to firearm categories only
   const firearmCategories = categories.filter(c => FIREARM_CATEGORIES.includes(c.name));
+  const otherCategories = categories.filter(c => !FIREARM_CATEGORIES.includes(c.name));
+
+  // Calibers to show based on selected type
+  const selectedCategoryName = form.category_name;
+  const availableCalibers = CALIBER_GROUPS[selectedCategoryName] || ALL_KNOWN_CALIBERS;
 
   useEffect(() => {
     if (item) {
       const makeIsKnown = MAKE_OPTIONS.includes(item.make);
       const caliberIsKnown = ALL_KNOWN_CALIBERS.includes(item.caliber);
       setForm({
-        name: item.name || '',
         serial_number: item.serial_number || '',
         make: makeIsKnown ? item.make : (item.make ? 'Other' : ''),
         make_custom: makeIsKnown ? '' : (item.make || ''),
@@ -90,6 +80,7 @@ export default function ItemFormModal({ item, onClose }) {
         storage_location_id: item.storage_location_id || '',
         status: item.status || 'Active',
         category_id: item.category_id || '',
+        category_name: item.category_name || '',
         notes: item.notes || '',
         owner_id: item.owner_id || '',
         is_private: item.is_private || false,
@@ -103,13 +94,28 @@ export default function ItemFormModal({ item, onClose }) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['items'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
-      toast(isEdit ? 'Item updated successfully.' : 'Item added successfully.');
+      toast(isEdit ? 'Firearm updated.' : 'Firearm added.');
       onClose();
     },
-    onError: (err) => setError(err.response?.data?.error || 'Failed to save item.'),
+    onError: (err) => setError(err.response?.data?.error || 'Failed to save.'),
   });
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  // When type changes, reset caliber if it's not valid for the new type
+  const handleCategoryChange = (catId) => {
+    const cat = categories.find(c => c.id === catId);
+    const catName = cat?.name || '';
+    const validCalibers = CALIBER_GROUPS[catName] || ALL_KNOWN_CALIBERS;
+    const currentCaliberValid = validCalibers.includes(form.caliber);
+    setForm(f => ({
+      ...f,
+      category_id: catId,
+      category_name: catName,
+      caliber: currentCaliberValid ? f.caliber : '',
+      caliber_custom: currentCaliberValid ? f.caliber_custom : '',
+    }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -117,8 +123,12 @@ export default function ItemFormModal({ item, onClose }) {
     const tags = form.tags.split(',').map(t => t.trim()).filter(Boolean);
     const resolvedMake = form.make === 'Other' ? form.make_custom : form.make;
     const resolvedCaliber = form.caliber === 'Other' ? form.caliber_custom : form.caliber;
-    const payload = {
-      name: form.name,
+
+    // Auto-generate name from make + model if not set
+    const autoName = [resolvedMake, form.model].filter(Boolean).join(' ') || 'Unnamed Firearm';
+
+    mutation.mutate({
+      name: autoName,
       serial_number: form.serial_number || null,
       make: resolvedMake || null,
       model: form.model || null,
@@ -134,8 +144,7 @@ export default function ItemFormModal({ item, onClose }) {
       owner_id: form.owner_id,
       is_private: form.is_private,
       tags,
-    };
-    mutation.mutate(payload);
+    });
   };
 
   return (
@@ -147,39 +156,43 @@ export default function ItemFormModal({ item, onClose }) {
             type="button"
             onClick={onClose}
             style={{
-              background: 'none', color: 'var(--text-muted)', padding: '4px 8px',
+              background: 'none', color: 'var(--text-muted)', padding: '4px 10px',
               cursor: 'pointer', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
-              display: 'flex', alignItems: 'center', gap: 4, fontSize: 12,
+              display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontFamily: 'var(--font-display)',
             }}
           >
-            <X size={14} /> Close
+            <X size={13} /> Close
           </button>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
             {error && (
-              <div style={{
-                padding: '9px 12px', background: 'var(--danger-bg)', color: 'var(--danger)',
-                borderRadius: 'var(--radius-sm)', marginBottom: 16, fontSize: 13,
-                border: '1px solid rgba(196,90,78,0.2)',
-              }}>{error}</div>
+              <div style={{ padding: '9px 12px', background: 'var(--danger-bg)', color: 'var(--danger)', borderRadius: 'var(--radius-sm)', marginBottom: 16, fontSize: 13, border: '1px solid rgba(196,90,78,0.2)' }}>
+                {error}
+              </div>
             )}
 
-            {/* Section: Identity */}
+            {/* ── Firearm Identity ── */}
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Firearm Identity</div>
             <div className="form-grid form-grid-3" style={{ marginBottom: 20 }}>
 
-              <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                <label className="form-label">Name *</label>
-                <input value={form.name} onChange={e => set('name', e.target.value)} required placeholder="e.g. Glock 19 Gen 5" />
-              </div>
+              {/* Type — drives caliber options */}
               <div className="form-group">
-                <label className="form-label">Serial Number</label>
-                <input className="mono" value={form.serial_number} onChange={e => set('serial_number', e.target.value)} placeholder="SN-XXXXX" />
+                <label className="form-label">Type *</label>
+                <select value={form.category_id} onChange={e => handleCategoryChange(e.target.value)} required>
+                  <option value="">— Select Type —</option>
+                  {firearmCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  {otherCategories.length > 0 && otherCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                {form.category_name && (
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+                    Caliber options filtered for {form.category_name}
+                  </div>
+                )}
               </div>
 
-              {/* Make dropdown */}
+              {/* Make */}
               <div className="form-group">
                 <label className="form-label">Make</label>
                 <select value={form.make} onChange={e => set('make', e.target.value)}>
@@ -187,30 +200,44 @@ export default function ItemFormModal({ item, onClose }) {
                   {MAKE_OPTIONS.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
               </div>
-              {form.make === 'Other' && (
+              {form.make === 'Other' ? (
                 <div className="form-group">
                   <label className="form-label">Make (Custom)</label>
                   <input value={form.make_custom} onChange={e => set('make_custom', e.target.value)} placeholder="Enter make" autoFocus />
                 </div>
+              ) : (
+                <div className="form-group">
+                  <label className="form-label">Model</label>
+                  <input value={form.model} onChange={e => set('model', e.target.value)} placeholder="e.g. 19 Gen 5" />
+                </div>
               )}
 
-              <div className="form-group">
-                <label className="form-label">Model</label>
-                <input value={form.model} onChange={e => set('model', e.target.value)} placeholder="19 Gen 5" />
-              </div>
+              {/* Show model on its own row if make is Other */}
+              {form.make === 'Other' && (
+                <div className="form-group">
+                  <label className="form-label">Model</label>
+                  <input value={form.model} onChange={e => set('model', e.target.value)} placeholder="e.g. 19 Gen 5" />
+                </div>
+              )}
 
-              {/* Caliber dropdown */}
+              {/* Caliber — filtered by selected type */}
               <div className="form-group">
                 <label className="form-label">Caliber</label>
                 <select value={form.caliber} onChange={e => set('caliber', e.target.value)}>
                   <option value="">— Select Caliber —</option>
-                  {CALIBER_GROUPS.map(group => (
-                    <optgroup key={group.label} label={`── ${group.label} ──`}>
-                      {group.calibers.map(c => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </optgroup>
-                  ))}
+                  {form.category_name && CALIBER_GROUPS[form.category_name] ? (
+                    // Single group for selected type
+                    CALIBER_GROUPS[form.category_name].map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))
+                  ) : (
+                    // All groups when no type selected
+                    Object.entries(CALIBER_GROUPS).map(([label, cals]) => (
+                      <optgroup key={label} label={`── ${label} ──`}>
+                        {cals.map(c => <option key={c} value={c}>{c}</option>)}
+                      </optgroup>
+                    ))
+                  )}
                   <option value="Other">Other / Custom</option>
                 </select>
               </div>
@@ -222,23 +249,15 @@ export default function ItemFormModal({ item, onClose }) {
               )}
 
               <div className="form-group">
-                <label className="form-label">Type / Category</label>
-                <select value={form.category_id} onChange={e => set('category_id', e.target.value)}>
-                  <option value="">— Select Type —</option>
-                  {firearmCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  {/* Also show non-firearm cats if any (for flexibility) */}
-                  {categories.filter(c => !FIREARM_CATEGORIES.includes(c.name)).map(c =>
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  )}
-                </select>
+                <label className="form-label">Serial Number</label>
+                <input className="mono" value={form.serial_number} onChange={e => set('serial_number', e.target.value)} placeholder="SN-XXXXX" />
               </div>
 
             </div>
 
-            {/* Section: Acquisition */}
+            {/* ── Acquisition ── */}
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Acquisition</div>
             <div className="form-grid form-grid-3" style={{ marginBottom: 20 }}>
-
               <div className="form-group">
                 <label className="form-label">Purchase Date</label>
                 <input type="date" value={form.purchase_date} onChange={e => set('purchase_date', e.target.value)} />
@@ -251,7 +270,6 @@ export default function ItemFormModal({ item, onClose }) {
                 <label className="form-label">Current Value ($)</label>
                 <input type="number" step="0.01" min="0" value={form.current_value} onChange={e => set('current_value', e.target.value)} placeholder="0.00" />
               </div>
-
               <div className="form-group" style={{ gridColumn: 'span 2' }}>
                 <label className="form-label">Acquired From</label>
                 <input value={form.acquired_from} onChange={e => set('acquired_from', e.target.value)} placeholder="Gun store, private sale, inheritance…" />
@@ -262,13 +280,11 @@ export default function ItemFormModal({ item, onClose }) {
                   {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
-
             </div>
 
-            {/* Section: Storage & Ownership */}
+            {/* ── Storage & Ownership ── */}
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Storage & Ownership</div>
             <div className="form-grid form-grid-3" style={{ marginBottom: 20 }}>
-
               <div className="form-group">
                 <label className="form-label">Storage Location</label>
                 <select value={form.storage_location_id} onChange={e => set('storage_location_id', e.target.value)}>
@@ -287,12 +303,10 @@ export default function ItemFormModal({ item, onClose }) {
                 <label className="form-label">Tags (comma-separated)</label>
                 <input value={form.tags} onChange={e => set('tags', e.target.value)} placeholder="Self Defense, Collector" />
               </div>
-
               <div className="form-group" style={{ gridColumn: 'span 3' }}>
                 <label className="form-label">Notes</label>
                 <textarea rows={3} value={form.notes} onChange={e => set('notes', e.target.value)} style={{ resize: 'vertical' }} placeholder="Modifications, condition, history…" />
               </div>
-
               <div className="form-group" style={{ gridColumn: 'span 3' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
                   <input type="checkbox" checked={form.is_private} onChange={e => set('is_private', e.target.checked)} style={{ width: 'auto', flexShrink: 0 }} />
@@ -302,7 +316,6 @@ export default function ItemFormModal({ item, onClose }) {
                   </div>
                 </label>
               </div>
-
             </div>
           </div>
 

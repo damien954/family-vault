@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usersApi } from '../api/client';
 import { useToast } from '../components/common/Toast';
-import { useAuth } from '../store/auth';
+import { useAuth } from '../store/auth.jsx';
 import Btn from '../components/common/Btn';
 import { Plus, Trash2, X, Shield, Users } from 'lucide-react';
 
