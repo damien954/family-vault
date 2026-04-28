@@ -93,11 +93,11 @@ export default function ItemDetailPage() {
         <Btn onClick={() => setShowEdit(true)}>Edit Item</Btn>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className='dash-grid-2' style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
         {/* Details card */}
         <div className="card">
           <h3 style={{ fontSize: 15, marginBottom: 20 }}>Item Details</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className='dash-grid-2' style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <DetailField label="Serial Number" value={item.serial_number} mono />
             <DetailField label="Make" value={item.make} />
             <DetailField label="Model" value={item.model} />
