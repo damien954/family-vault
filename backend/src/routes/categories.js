@@ -6,21 +6,19 @@ const { authenticate } = require('../middleware/auth');
 router.use(authenticate);
 
 router.get('/', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM categories ORDER BY name');
-    res.json(result.rows);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  try { res.json((await pool.query('SELECT * FROM categories ORDER BY name')).rows); }
+  catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.post('/', [body('name').trim().notEmpty()], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
   try {
-    const result = await pool.query(
-      'INSERT INTO categories (name, created_by) VALUES ($1, $2) RETURNING *',
+    const r = await pool.query(
+      'INSERT INTO categories (name, created_by) VALUES ($1,$2) RETURNING *',
       [req.body.name, req.user.id]
     );
-    res.status(201).json(result.rows[0]);
+    res.status(201).json(r.rows[0]);
   } catch (err) {
     if (err.code === '23505') return res.status(409).json({ error: 'Category already exists' });
     res.status(500).json({ error: err.message });
@@ -29,12 +27,12 @@ router.post('/', [body('name').trim().notEmpty()], async (req, res) => {
 
 router.put('/:id', [body('name').trim().notEmpty()], async (req, res) => {
   try {
-    const result = await pool.query(
+    const r = await pool.query(
       'UPDATE categories SET name = $1 WHERE id = $2 RETURNING *',
       [req.body.name, req.params.id]
     );
-    if (!result.rows.length) return res.status(404).json({ error: 'Not found' });
-    res.json(result.rows[0]);
+    if (!r.rows.length) return res.status(404).json({ error: 'Not found' });
+    res.json(r.rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

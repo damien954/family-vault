@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { pool } = require('../models/db');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'familyvault-secret-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 async function authenticate(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -11,7 +11,10 @@ async function authenticate(req, res, next) {
   const token = authHeader.slice(7);
   try {
     const payload = jwt.verify(token, JWT_SECRET);
-    const result = await pool.query('SELECT id, email, name, is_admin FROM users WHERE id = $1', [payload.userId]);
+    const result  = await pool.query(
+      'SELECT id, email, name, is_admin FROM users WHERE id = $1',
+      [payload.userId]
+    );
     if (!result.rows.length) return res.status(401).json({ error: 'User not found' });
     req.user = result.rows[0];
     next();

@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../store/auth.jsx';
-import { LayoutDashboard, Package, MapPin, Tag, Users, LogOut, Shield } from 'lucide-react';
+import { LayoutDashboard, Package, MapPin, Tag, Users, LogOut, Shield, UserCircle } from 'lucide-react';
 
 export default function Layout() {
   const { user, logout } = useAuth();
@@ -16,97 +16,100 @@ export default function Layout() {
     ...(user?.is_admin ? [{ to: '/users', icon: Users, label: 'Users' }] : []),
   ];
 
+  const navLinkStyle = ({ isActive }) => ({
+    display: 'flex', alignItems: 'center', gap: 10,
+    padding: '9px 12px', borderRadius: 'var(--r-sm)',
+    fontSize: 13, fontWeight: 600,
+    color: isActive ? 'var(--accent)' : 'var(--text-2)',
+    background: isActive ? 'var(--accent-sub)' : 'transparent',
+    borderLeft: isActive ? '2px solid var(--accent)' : '2px solid transparent',
+    transition: 'all .1s', textDecoration: 'none',
+  });
+
   return (
     <div className="app-shell">
-
-      {/* ── Desktop sidebar ── */}
+      {/* Desktop sidebar */}
       <aside className="sidebar">
         {/* Logo */}
-        <div style={{ padding: '20px 18px 16px', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 'var(--r-sm)',
-              background: 'var(--accent-bg)', border: '1px solid var(--accent-dim)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              <Shield size={16} color="var(--accent)" />
+            <div style={{ width: 30, height: 30, borderRadius: 'var(--r-sm)', background: 'var(--accent-sub)', border: '1px solid var(--accent-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Shield size={15} color="var(--accent)" />
             </div>
             <div>
-              <div style={{ fontWeight: 800, fontSize: 15, letterSpacing: '-0.01em', lineHeight: 1 }}>FamilyVault</div>
-              <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Inventory</div>
+              <div style={{ fontWeight: 800, fontSize: 14, letterSpacing: '-.01em', lineHeight: 1 }}>FamilyVault</div>
+              <div style={{ fontSize: 9, color: 'var(--text-3)', marginTop: 2, letterSpacing: '.07em', textTransform: 'uppercase' }}>Inventory</div>
             </div>
           </div>
         </div>
 
-        {/* Nav links */}
+        {/* Nav */}
         <nav style={{ flex: 1, padding: '10px 8px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
           {navItems.map(({ to, icon: Icon, label, end }) => (
-            <NavLink key={to} to={to} end={end} style={({ isActive }) => ({
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '9px 12px', borderRadius: 'var(--r-sm)',
-              fontSize: 13, fontWeight: 600,
-              color: isActive ? 'var(--accent)' : 'var(--text-2)',
-              background: isActive ? 'var(--accent-bg)' : 'transparent',
-              borderLeft: isActive ? '2px solid var(--accent)' : '2px solid transparent',
-              transition: 'all 0.1s', textDecoration: 'none',
-            })}>
-              <Icon size={15} />
-              {label}
+            <NavLink key={to} to={to} end={end} style={navLinkStyle}>
+              <Icon size={15} /> {label}
             </NavLink>
           ))}
         </nav>
 
         {/* User footer */}
-        <div style={{ padding: '12px 14px', borderTop: '1px solid var(--border)' }}>
-          <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 1, fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</div>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>{user?.name}</div>
+        <div style={{ padding: '12px 12px', borderTop: '1px solid var(--border)' }}>
+          <NavLink to="/profile" style={({ isActive }) => ({
+            display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px',
+            borderRadius: 'var(--r-sm)', textDecoration: 'none', marginBottom: 8,
+            background: isActive ? 'var(--accent-sub)' : 'transparent',
+            transition: 'background .1s',
+          })}>
+            <UserCircle size={28} color="var(--text-3)" />
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)' }} className="truncate">{user?.name}</div>
+              <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--mono)' }} className="truncate">{user?.email}</div>
+            </div>
+          </NavLink>
           <button onClick={handleLogout} style={{
             display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px',
-            borderRadius: 'var(--r-sm)', background: 'transparent',
-            color: 'var(--text-3)', fontSize: 12, fontWeight: 600,
-            border: '1px solid var(--border)', width: '100%', cursor: 'pointer',
-            transition: 'all 0.1s',
+            borderRadius: 'var(--r-sm)', background: 'transparent', color: 'var(--text-3)',
+            fontSize: 12, fontWeight: 600, border: '1px solid var(--border)', width: '100%', cursor: 'pointer',
           }}
-            onMouseEnter={e => { e.currentTarget.style.color = 'var(--danger)'; e.currentTarget.style.borderColor = 'var(--danger)'; }}
-            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-3)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
+            onMouseEnter={e => { e.currentTarget.style.color='var(--red)'; e.currentTarget.style.borderColor='var(--red)'; }}
+            onMouseLeave={e => { e.currentTarget.style.color='var(--text-3)'; e.currentTarget.style.borderColor='var(--border)'; }}
           >
             <LogOut size={13} /> Sign out
           </button>
         </div>
       </aside>
 
-      {/* ── Main content ── */}
+      {/* Main */}
       <div className="main-content">
-
-        {/* Mobile top bar */}
+        {/* Mobile topbar */}
         <div className="mobile-topbar">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Shield size={16} color="var(--accent)" />
-            <span style={{ fontWeight: 800, fontSize: 15 }}>FamilyVault</span>
+            <Shield size={15} color="var(--accent)" />
+            <span style={{ fontWeight: 800, fontSize: 14 }}>FamilyVault</span>
           </div>
-          <button onClick={handleLogout} style={{
-            background: 'none', border: 'none', color: 'var(--text-3)',
-            display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, padding: '6px 8px',
-          }}>
-            <LogOut size={14} /> Out
-          </button>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <NavLink to="/profile" style={{ color: 'var(--text-3)', display: 'flex', padding: 4 }}><UserCircle size={20} /></NavLink>
+            <button onClick={handleLogout} style={{ background: 'none', border: 'none', color: 'var(--text-3)', display: 'flex', alignItems: 'center', padding: 4, cursor: 'pointer' }}>
+              <LogOut size={18} />
+            </button>
+          </div>
         </div>
-
         <Outlet />
       </div>
 
-      {/* ── Mobile bottom nav ── */}
+      {/* Mobile bottom nav */}
       <nav className="mobile-nav">
         <div className="mobile-nav-items">
           {navItems.map(({ to, icon: Icon, label, end }) => (
             <NavLink key={to} to={to} end={end} className={({ isActive }) => `mobile-nav-item${isActive ? ' active' : ''}`}>
-              <Icon size={20} />
-              <span>{label}</span>
+              <Icon size={20} /><span>{label}</span>
             </NavLink>
           ))}
+          <NavLink to="/profile" className={({ isActive }) => `mobile-nav-item${isActive ? ' active' : ''}`}>
+            <UserCircle size={20} /><span>Profile</span>
+          </NavLink>
         </div>
       </nav>
-
     </div>
   );
 }

@@ -1,8 +1,5 @@
--- FamilyVault Database Schema
-
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- Users
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email VARCHAR(255) UNIQUE NOT NULL,
@@ -13,7 +10,6 @@ CREATE TABLE users (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Storage Locations
 CREATE TABLE storage_locations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(255) NOT NULL,
@@ -22,7 +18,6 @@ CREATE TABLE storage_locations (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Categories
 CREATE TABLE categories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(255) UNIQUE NOT NULL,
@@ -30,7 +25,6 @@ CREATE TABLE categories (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Inventory Items
 CREATE TABLE items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(255) NOT NULL,
@@ -39,11 +33,11 @@ CREATE TABLE items (
   model VARCHAR(255),
   caliber VARCHAR(100),
   purchase_date DATE,
-  purchase_amount NUMERIC(12, 2),
-  current_value NUMERIC(12, 2),
+  purchase_amount NUMERIC(12,2),
+  current_value NUMERIC(12,2),
   purchased_from VARCHAR(255),
   storage_location_id UUID REFERENCES storage_locations(id) ON DELETE SET NULL,
-  status VARCHAR(50) DEFAULT 'Active' CHECK (status IN ('Active', 'Sold', 'Transferred', 'Lost', 'Stolen')),
+  status VARCHAR(50) DEFAULT 'Active' CHECK (status IN ('Active','Sold','Transferred','Lost','Stolen')),
   category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
   notes TEXT,
   owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -53,20 +47,17 @@ CREATE TABLE items (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Tags
 CREATE TABLE tags (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(100) UNIQUE NOT NULL
 );
 
--- Item Tags (many-to-many)
 CREATE TABLE item_tags (
   item_id UUID REFERENCES items(id) ON DELETE CASCADE,
-  tag_id UUID REFERENCES tags(id) ON DELETE CASCADE,
+  tag_id  UUID REFERENCES tags(id)  ON DELETE CASCADE,
   PRIMARY KEY (item_id, tag_id)
 );
 
--- Item Images
 CREATE TABLE item_images (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   item_id UUID NOT NULL REFERENCES items(id) ON DELETE CASCADE,
@@ -77,26 +68,18 @@ CREATE TABLE item_images (
   uploaded_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Indexes
-CREATE INDEX idx_items_owner ON items(owner_id);
-CREATE INDEX idx_items_status ON items(status);
+CREATE INDEX idx_items_owner    ON items(owner_id);
+CREATE INDEX idx_items_status   ON items(status);
 CREATE INDEX idx_items_category ON items(category_id);
 CREATE INDEX idx_items_location ON items(storage_location_id);
-CREATE INDEX idx_items_private ON items(is_private);
+CREATE INDEX idx_items_private  ON items(is_private);
 CREATE INDEX idx_item_tags_item ON item_tags(item_id);
-CREATE INDEX idx_item_tags_tag ON item_tags(tag_id);
+CREATE INDEX idx_item_tags_tag  ON item_tags(tag_id);
 
--- Auto-update updated_at
 CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
+BEGIN NEW.updated_at = NOW(); RETURN NEW; END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER users_updated_at BEFORE UPDATE ON users
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-
-CREATE TRIGGER items_updated_at BEFORE UPDATE ON items
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER items_updated_at BEFORE UPDATE ON items FOR EACH ROW EXECUTE FUNCTION update_updated_at();

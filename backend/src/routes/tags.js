@@ -5,9 +5,17 @@ const { authenticate } = require('../middleware/auth');
 router.use(authenticate);
 
 router.get('/', async (req, res) => {
+  try { res.json((await pool.query('SELECT * FROM tags ORDER BY name')).rows); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Manually delete orphaned tags
+router.post('/cleanup', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM tags ORDER BY name');
-    res.json(result.rows);
+    const r = await pool.query(
+      'DELETE FROM tags WHERE id NOT IN (SELECT DISTINCT tag_id FROM item_tags) RETURNING id'
+    );
+    res.json({ deleted: r.rowCount });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
